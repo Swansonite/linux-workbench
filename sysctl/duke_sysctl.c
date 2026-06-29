@@ -3,12 +3,12 @@
  * Author:
  *   David Silver
  *
- * Development note: 
- * This implementation was developed through substantial design, testing,
- * and troubleshooting, with AI used as a supporting tool. The intended
- * behavior was defined and the implementation was directed, reviewed, and
- * refined through several build and runtime failures until a working kernel
- * build was achieved.
+ * Development note:
+ *   This implementation was developed through substantial design, testing,
+ *   and troubleshooting, with AI used as a supporting tool. The intended
+ *   behavior was defined and the implementation was directed, reviewed, and
+ *   refined through several build and runtime failures until a working kernel
+ *   build was achieved.
  *
  * Target kernel:
  *   This implementation was designed and tested for use with the following
@@ -26,13 +26,13 @@
 
 /*
  * ============================================================================
- *                             kernel.duke sysctl demo 
+ *                             kernel.duke sysctl demo
  * ============================================================================
  *
- * Goal / demo:
- * Test the process of adding and building a custom sysctl in the RHEL
- * kernel, while providing a simple, highly visible confirmation that the
- * kernel was rebuilt successfully from modified source.
+ *  Goal / demo:
+ *    Test the process of adding and building a custom sysctl in the RHEL Linux
+ *    kernel, while providing a simple, highly visible confirmation that the
+ *    kernel was rebuilt successfully from modified source.
  *
  *  What this patch adds:
  *    - A new sysctl knob: /proc/sys/kernel/duke
@@ -60,8 +60,8 @@
  *      using register_sysctl_init("kernel", ...).
  *    - The sysctl value is stored in duke_enabled.
  *    - When duke_enabled changes, we start or stop a delayed work item.
- *    - The delayed work prints the banner and schedules itself again 4 seconds
- *      later.
+ *    - The delayed work prints the banner one line at a time and schedules
+ *      itself again 4 seconds later.
  *
  *  Safety and concurrency:
  *    - sysctl handlers can be called concurrently.
@@ -83,6 +83,7 @@
 #include <linux/sysctl.h>     /* sysctl definitions and helpers */
 #include <linux/mutex.h>      /* mutex primitives */
 #include <linux/compiler.h>   /* READ_ONCE(), WRITE_ONCE() */
+#include <linux/string.h>     /* strchr() */
 
 /*
  * duke_enabled:
@@ -170,12 +171,36 @@ static const char duke_banner[] =
 "-----------------------------------------------------------------------------------\n";
 
 /*
+ * duke_print_banner()
+ *   Prints the banner one line at a time so each line is stored as a separate
+ *   printk record. This prevents the full banner from being truncated by the
+ *   kernel log record size limit.
+ */
+static void duke_print_banner(void)
+{
+	const char *line = duke_banner;
+	const char *newline;
+
+	while (*line) {
+		newline = strchr(line, '\n');
+
+		if (!newline) {
+			pr_info("%s\n", line);
+			break;
+		}
+
+		pr_info("%.*s\n", (int)(newline - line), line);
+		line = newline + 1;
+	}
+}
+
+/*
  * duke_banner_workfn()
  *   Function executed by the workqueue when the delayed work runs.
  *
  *   Behavior:
  *     1) Check whether duke_enabled is still enabled.
- *     2) Print the banner.
+ *     2) Print the banner one line at a time.
  *     3) Check again before scheduling another execution.
  *     4) Schedule itself to run again in about 4 seconds if still enabled.
  *
@@ -188,7 +213,7 @@ static void duke_banner_workfn(struct work_struct *work)
 	if (!READ_ONCE(duke_enabled))
 		return;
 
-	pr_info("%s", duke_banner);
+	duke_print_banner();
 
 	if (READ_ONCE(duke_enabled))
 		schedule_delayed_work(&duke_work, msecs_to_jiffies(4000));

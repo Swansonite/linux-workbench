@@ -9,4 +9,5 @@ A collection of Linux projects, kernel experiments, source code, build workflows
 ## Projects
 
 <!-- PROJECTS:START -->
+- [sysctl](./sysctl/)
 <!-- PROJECTS:END -->

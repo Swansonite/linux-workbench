@@ -1,0 +1,34 @@
+#!/bin/bash
+
+set -euo pipefail
+
+REPO_ROOT=$(git rev-parse --show-toplevel)
+cd "$REPO_ROOT"
+
+new_directory_found=false
+
+while read -r path
+do
+	top_directory=${path%%/*}
+
+	# Ignore files added directly to the repository root.
+	[[ "$path" == "$top_directory" ]] && continue
+
+	# Ignore repository support directories.
+	case "$top_directory" in
+		.git|.github|.githooks|media|scripts)
+			continue
+			;;
+	esac
+
+	# Run the index update only if this directory is new.
+	if ! git cat-file -e "HEAD:$top_directory" 2>/dev/null; then
+		new_directory_found=true
+		break
+	fi
+done < <(git diff --cached --name-only --diff-filter=A)
+
+if [[ "$new_directory_found" == true ]]; then
+	./scripts/update-project-index.sh
+	git add README.md
+fi

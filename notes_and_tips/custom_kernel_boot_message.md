@@ -15,7 +15,7 @@ Finding the message provides a simple way to confirm that:
 - The system booted into your custom kernel.
 - Your custom code was executed during kernel initialization.
 
-> ⚠️ 🛑 IMPORTANT NOTE: Perform this only on a test system or in a controlled lab environment. 🛑 ⚠️ 
+⚠️ 🛑 **IMPORTANT NOTE: Perform this only on a test system or in a controlled lab environment.** 🛑 ⚠️ 
 
 ## Create a Kernel Source Branch
 

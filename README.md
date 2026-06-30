@@ -9,5 +9,7 @@ A collection of Linux projects, kernel experiments, source code, build workflows
 ## Projects
 
 <!-- PROJECTS:START -->
+- [.githooks](./.githooks/)
+- [notes_and_tips](./notes_and_tips/)
 - [sysctl](./sysctl/)
 <!-- PROJECTS:END -->
